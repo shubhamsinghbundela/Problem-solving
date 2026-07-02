@@ -18,10 +18,8 @@
   - `npm run test-duplicates`
 */
 
-
 function findDuplicates(arr) {
   return arr.filter((ele, index) => arr.indexOf(ele) !== index);
 }
 
 module.exports = findDuplicates;
-
