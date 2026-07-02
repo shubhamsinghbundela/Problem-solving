@@ -21,6 +21,20 @@
   - `npm run test-nonrepeat`
 */
 function nonrepeat(str) {
-  // Your code here
+  let obj = {};
+  for (let i = 0; i < str.length; i++) {
+    if (str.charAt(i) in obj) {
+      delete obj[str.charAt(i)];
+    } else {
+      //   console.log("29");
+      obj[str.charAt(i)] = 0;
+    }
+  }
+  let total = Object.keys(obj).length;
+  if (total >= 1) {
+    return Object.keys(obj)[0];
+  } else {
+    return null;
+  }
 }
 module.exports = nonrepeat;
