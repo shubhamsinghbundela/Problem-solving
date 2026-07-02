@@ -59,36 +59,94 @@
 // const result = compression("aabba");
 // console.log(result);
 
-function compression(str) {
-  let obj = {};
-  let newStr = "";
-  for (let i = 0; i < str.length; i++) {
-    console.log(obj);
-    if (str.charAt(i) in obj) {
-      obj[str.charAt(i)] += 1;
-    } else {
-      for (let [key, value] of Object.entries(obj)) {
-        if (value > 1) {
-          newStr += key;
-          newStr += value;
-        } else {
-          newStr += key;
-        }
-        delete obj[key];
-      }
+// function compression(str) {
+//   let obj = {};
+//   let newStr = "";
+//   for (let i = 0; i < str.length; i++) {
+//     console.log(obj);
+//     if (str.charAt(i) in obj) {
+//       obj[str.charAt(i)] += 1;
+//     } else {
+//       for (let [key, value] of Object.entries(obj)) {
+//         if (value > 1) {
+//           newStr += key;
+//           newStr += value;
+//         } else {
+//           newStr += key;
+//         }
+//         delete obj[key];
+//       }
 
-      obj[str.charAt(i)] = 1;
+//       obj[str.charAt(i)] = 1;
+//     }
+//   }
+
+//   for (let [key, value] of Object.entries(obj)) {
+//     if (value > 1) {
+//       newStr += key;
+//       newStr += value;
+//     } else {
+//       newStr += key;
+//     }
+//     delete obj[key];
+//   }
+
+//   return newStr;
+// }
+
+// function compression(str: string) {
+//   let newStr = "";
+//   let i = 0;
+//   let j = 0;
+//   let count = 0;
+//   while (i < str.length && j < str.length) {
+//     if (str.charAt(i) !== str.charAt(j)) {
+//       newStr += str.charAt(i);
+//       newStr += count;
+//       i = j;
+//       count = 0;
+//     } else {
+//       count += 1;
+//       j++;
+//     }
+//   }
+//   if (count >= 1) {
+//     newStr += str.charAt(i);
+//     newStr += count;
+//   } else {
+//     newStr += str.charAt(i);
+//   }
+
+//   return newStr;
+// }
+
+function compression(str) {
+  let newStr = "";
+  let i = 0;
+  let j = 0;
+  let count = 0;
+  while (i < str.length && j < str.length) {
+    if (str.charAt(i) !== str.charAt(j)) {
+      if (count > 1) {
+        newStr += str.charAt(i);
+        newStr += count;
+        i = j;
+        count = 0;
+      } else {
+        newStr += str.charAt(i);
+        i = j;
+        count = 0;
+      }
+    } else {
+      count += 1;
+      j++;
     }
   }
-
-  for (let [key, value] of Object.entries(obj)) {
-    if (value > 1) {
-      newStr += key;
-      newStr += value;
-    } else {
-      newStr += key;
-    }
-    delete obj[key];
+  if (count > 1) {
+    newStr += str.charAt(i);
+    newStr += count;
+  } else {
+    newStr += str.charAt(i);
   }
 
   return newStr;
