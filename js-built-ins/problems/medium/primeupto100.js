@@ -15,8 +15,27 @@
   - `npm run test-prime`
 */
 
+function isPrime(n) {
+  let flag = true;
+  for (let i = 2; i <= Math.sqrt(n); i++) {
+    if (n % i == 0) {
+      flag = false;
+      break;
+    }
+  }
+  return flag;
+}
+
 function getPrimesUpTo100() {
   // Your code here
+  let arr = [];
+  for (let i = 2; i < 101; i++) {
+    let num = isPrime(i);
+    if (num == true) {
+      arr.push(i);
+    }
+  }
+  return arr;
 }
 
 module.exports = { getPrimesUpTo100 };
