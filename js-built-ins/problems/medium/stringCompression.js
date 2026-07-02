@@ -20,8 +20,78 @@
   Once you've implemented the logic, test your code by running
   - `npm run test-compressString`
 */
+
+// function compression(str: string) {
+//   let obj: Record<string, number> = {};
+//   let newStr = "";
+//   for (let i = 0; i < str.length; i++) {
+//     console.log(obj);
+//     if (str.charAt(i) in obj) {
+//       obj[str.charAt(i)] += 1;
+//     } else {
+//       for (let [key, value] of Object.entries(obj)) {
+//         if (value > 1) {
+//           newStr += key;
+//           newStr += value;
+//         } else {
+//           newStr += key;
+//         }
+//         delete obj[key];
+//       }
+
+//       obj[str.charAt(i)] = 1;
+//     }
+//   }
+
+//   for (let [key, value] of Object.entries(obj)) {
+//     if (value > 1) {
+//       newStr += key;
+//       newStr += value;
+//     } else {
+//       newStr += key;
+//     }
+//     delete obj[key];
+//   }
+
+//   return newStr;
+// }
+
+// const result = compression("aabba");
+// console.log(result);
+
 function compression(str) {
-  // Your code here
+  let obj = {};
+  let newStr = "";
+  for (let i = 0; i < str.length; i++) {
+    console.log(obj);
+    if (str.charAt(i) in obj) {
+      obj[str.charAt(i)] += 1;
+    } else {
+      for (let [key, value] of Object.entries(obj)) {
+        if (value > 1) {
+          newStr += key;
+          newStr += value;
+        } else {
+          newStr += key;
+        }
+        delete obj[key];
+      }
+
+      obj[str.charAt(i)] = 1;
+    }
+  }
+
+  for (let [key, value] of Object.entries(obj)) {
+    if (value > 1) {
+      newStr += key;
+      newStr += value;
+    } else {
+      newStr += key;
+    }
+    delete obj[key];
+  }
+
+  return newStr;
 }
 
 module.exports = compression;
