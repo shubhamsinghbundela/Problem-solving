@@ -21,8 +21,36 @@
   - `npm run test-reverseInteger`
 */
 
+// function reverseInteger(num: number): number {
+//   let str = String(num);
+//   let str1 = "";
+//   let str2 = "";
+
+//   for (let i = str.length - 1; i >= 0; i--) {
+//     if (!isNaN(Number(str.charAt(i)))) {
+//       str2 += str.charAt(i);
+//     } else {
+//       str1 += str.charAt(i);
+//     }
+//   }
+//   let newStr = str1 + str2;
+//   return Number(newStr);
+// }
+
 function reverseInteger(num) {
-  // Your code here
+  let str = String(num);
+  let str1 = "";
+  let str2 = "";
+
+  for (let i = str.length - 1; i >= 0; i--) {
+    if (!isNaN(Number(str.charAt(i)))) {
+      str2 += str.charAt(i);
+    } else {
+      str1 += str.charAt(i);
+    }
+  }
+  let newStr = str1 + str2;
+  return Number(newStr);
 }
 
 module.exports = reverseInteger;
