@@ -1,26 +1,29 @@
-/*
-  Write a function `nonrepeat` which takes a string as input and returns the first non-repeating character in the string.
+const fs = require("fs");
 
-  What is a non-repeating character?
-  - A character that appears only once in the entire string.
+function promisifiedReadFile(textFile, format) {
+  return new Promise((res, rej) => {
+    return fs.readFile(textFile, format, (err, data) => {
+      if (err) {
+        rej(err);
+      } else {
+        res(data);
+      }
+    });
+  });
+}
 
-  Example:
-  - Input: "abcab"
-  - Output: "c"
+function callback(data) {
+  console.log(data);
+}
 
-  - Input: "aabbcc"
-  - Output: null
+async function promiseResult() {
+  const data1 = await promisifiedReadFile("a.txt", "utf-8");
+  console.log(data1);
+  const data2 = await promisifiedReadFile("a.txt", "utf-8");
+  console.log(data2);
+}
+promiseResult();
 
-  - Input: "abcdef"
-  - Output: "a"
-
-  - Input: ""
-  - Output: null
-
-  Once you've implemented the logic, test your code by running
-  - `npm run test-nonrepeat`
-*/
-
-const result = nonrepeat("");
-console.log(result);
-module.exports = nonrepeat;
+for (let index = 0; index < 10; index++) {
+  console.log("28");
+}
