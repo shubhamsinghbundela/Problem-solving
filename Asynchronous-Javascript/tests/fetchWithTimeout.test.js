@@ -1,4 +1,4 @@
-const  fetchWithTimeout  = require("../callbacks/easy/fetchWithTimeout");
+const fetchWithTimeout = require("../callbacks/easy/fetchWithTimeout");
 
 describe("fetchWithTimeout (Callback Style)", () => {
   beforeEach(() => {
