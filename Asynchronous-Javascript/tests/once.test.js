@@ -15,9 +15,11 @@ describe("once callback", () => {
         try {
           expect(callCount).toBe(1);
           expect(r1).toBe(4);
-          expect(r2).toBe(4); 
+          expect(r2).toBe(4);
           done();
-        } catch (e) { done(e); }
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
@@ -38,7 +40,9 @@ describe("once callback", () => {
         try {
           expect(callCount).toBe(1);
           done();
-        } catch (e) { done(e); }
+        } catch (e) {
+          done(e);
+        }
       }
     };
 
