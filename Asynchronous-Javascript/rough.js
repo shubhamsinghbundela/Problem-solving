@@ -1,18 +1,18 @@
-let callCount = 0;
-const fn = (cb) => {
-  callCount++;
-  setTimeout(() => cb(null, "done"), 50);
-};
+function rejectAfter(ms, callback) {
+  setTimeout(() => {
+    const err = {};
+    const data = null;
+    err.message = `Rejected after ${ms}ms`;
+    callback(err, data);
+  }, ms);
+}
 
-const onceFn = once(fn);
-let completed = 0;
+const start = Date.now();
+const waitTime = 100;
 
-const check = (err, res) => {
-  completed++;
-  if (completed === 2) {
-    console.log(callCount);
-  }
-};
-
-onceFn(check);
-onceFn(check);
+rejectAfter(waitTime, (err, result) => {
+  const diff = Date.now() - start;
+  console.log(result);
+  console.log(err.message);
+  console.log(waitTime > diff);
+});
