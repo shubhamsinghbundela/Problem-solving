@@ -1,18 +1,47 @@
-function rejectAfter(ms, callback) {
-  setTimeout(() => {
-    const err = {};
-    const data = null;
-    err.message = `Rejected after ${ms}ms`;
-    callback(err, data);
-  }, ms);
+function batchProcess(items, limit, worker, onComplete) {
+  const queue = [];
+  const result = [];
+  let index = 0;
+  let completed = 1;
+  while (index < limit) {
+    queue[index] = { idx: index, time: items[index] };
+    index += 1;
+  }
+
+  while (queue.length > 0) {
+    const { idx, time } = queue.shift();
+    worker(time, (err, data) => {
+      result[idx] = data;
+      if (completed === items.length) {
+        if (err) {
+          onComplete(err);
+        } else {
+          onComplete(null, result);
+        }
+      }
+
+      completed += 1;
+    });
+    if (index < items.length) {
+      queue.push({ idx: index, time: items[index] });
+      index += 1;
+    }
+  }
 }
+const items = [20, 20, 20, 20, 20];
+let runningCounter = 0;
+let maxObserved = 0;
 
-const start = Date.now();
-const waitTime = 100;
+const worker = (item, cb) => {
+  runningCounter++;
+  maxObserved = Math.max(maxObserved, runningCounter);
 
-rejectAfter(waitTime, (err, result) => {
-  const diff = Date.now() - start;
-  console.log(result);
-  console.log(err.message);
-  console.log(waitTime > diff);
+  setTimeout(() => {
+    runningCounter--;
+    cb(null, item);
+  }, 10);
+};
+
+batchProcess(items, 2, worker, (err, results) => {
+  console.log(maxObserved);
 });
