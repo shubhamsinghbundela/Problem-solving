@@ -13,35 +13,29 @@
 // - Stop and return an error if any task fails.
 
 function batchProcess(items, limit, worker, onComplete) {
-  let results = [];
+  let result = [];
   let index = 0;
-  let completed = 0;
   let active = 0;
+  let completed = 0;
 
   function next() {
-    // All done
     if (completed === items.length) {
-      return onComplete(null, results);
+      return onComplete(null, result);
     }
 
-    // Start new tasks while under limit
     while (active < limit && index < items.length) {
-      const currentIndex = index;
+      let currentIndex = index;
       active++;
       index++;
-
       worker(items[currentIndex], (err, data) => {
         if (err) return onComplete(err);
-
-        results[currentIndex] = data;
+        result[currentIndex] = data;
         active--;
         completed++;
-
-        next(); // Start next task when one finishes
+        next();
       });
     }
   }
-
   next();
 }
 
