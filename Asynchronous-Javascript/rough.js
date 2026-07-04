@@ -1,17 +1,25 @@
-class CallbackPool {
-  constructor(limit) {
-    this.limit = limit;
+class DynamicPriorityQueue {
+  constructor(concurrency) {
+    this.concurrency = concurrency;
     this.queue = [];
     this.active = 0;
   }
 
-  run(task, onComplete) {
-    this.queue.push({ task, onComplete });
-    this._next();
+  setLimit(newLimit) {
+    this.concurrency = newLimit;
+    this.runNext();
   }
 
-  _next() {
-    while (this.active < this.limit && this.queue.length !== 0) {
+  add(task, priority, onComplete) {
+    this.queue.push({ task, priority, onComplete });
+    console.log("before", this.queue);
+    this.queue.sort((a, b) => b.priority - a.priority);
+    console.log("after", this.queue);
+    this.runNext();
+  }
+
+  runNext() {
+    while (this.active < this.concurrency && this.queue.length !== 0) {
       const { task, onComplete } = this.queue.shift();
       this.active += 1;
       task((err, data) => {
@@ -21,33 +29,52 @@ class CallbackPool {
         } else {
           onComplete(null, data);
         }
-        this._next();
+        this.runNext();
       });
     }
   }
 }
 
-const pool = new CallbackPool(2);
-let activeCount = 0;
-let maxActive = 0;
-let finished = 0;
+const pq = new DynamicPriorityQueue(1);
+const results = [];
 
-const task = (cb) => {
-  activeCount++;
-  maxActive = Math.max(maxActive, activeCount);
-  setTimeout(() => {
-    activeCount--;
-    cb(null, "done");
-  }, 20);
-};
-
-const handleComplete = () => {
-  finished++;
-  if (finished === 5) {
-    console.log(maxActive);
+const checkDone = () => {
+  if (results.length === 3) {
+    // try {
+    //   expect(results).toEqual(["first", "high", "low"]);
+    //   done();
+    // } catch (e) {
+    //   done(e);
+    // }
+    console.log(results);
   }
 };
 
-for (let i = 0; i < 5; i++) {
-  pool.run(task, handleComplete);
-}
+pq.add(
+  (cb) => setTimeout(() => cb(null, "first"), 50),
+  0,
+  (err, res) => {
+    results.push(res);
+    checkDone();
+  },
+);
+
+pq.add(
+  (cb) => setTimeout(() => cb(null, "low"), 10),
+  0,
+  (err, res) => {
+    results.push(res);
+    checkDone();
+  },
+);
+
+pq.add(
+  (cb) => setTimeout(() => cb(null, "high"), 10),
+  10,
+  (err, res) => {
+    results.push(res);
+    checkDone();
+  },
+);
+
+pq.setLimit(2);
