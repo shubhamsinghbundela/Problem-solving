@@ -11,6 +11,26 @@
 // Invoke finalCallback after all tasks have completed, or with an error
 // if any task fails.
 
-function runWithDependencies(tasks, finalCallback) {}
+function runWithDependencies(tasks, finalCallback) {
+  let obj = {};
+  let result = {};
+  tasks.forEach((element) => {
+    obj[element.id] = element;
+  });
+  // console.log(obj);
+  tasks.forEach((element) => {
+    element.deps.forEach((dependencyElement, index) => {
+      obj[dependencyElement].run((err, data) => {
+        result[dependencyElement] = data;
+        if (index == element.deps.length - 1) {
+          element.run((err, data) => {
+            result[element.id] = data;
+            finalCallback(null, result);
+          });
+        }
+      });
+    });
+  });
+}
 
 module.exports = runWithDependencies;
