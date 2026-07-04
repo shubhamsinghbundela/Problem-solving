@@ -1,78 +1,52 @@
-class DynamicPriorityQueue {
-  constructor(concurrency) {
-    this.concurrency = concurrency;
+class GuardedAPI {
+  constructor() {
     this.queue = [];
-    this.active = 0;
   }
 
-  setLimit(newLimit) {
-    this.concurrency = newLimit;
-    this.runNext();
+  init(initTask) {
+    initTask((err, data) => {
+      this._flush();
+    });
   }
 
-  add(task, priority, onComplete) {
-    this.queue.push({ task, priority, onComplete });
-    console.log("before", this.queue);
-    this.queue.sort((a, b) => b.priority - a.priority);
-    console.log("after", this.queue);
-    this.runNext();
+  call(apiFn, onComplete) {
+    this.queue.push({ apiFn, onComplete });
   }
 
-  runNext() {
-    while (this.active < this.concurrency && this.queue.length !== 0) {
-      const { task, onComplete } = this.queue.shift();
-      this.active += 1;
-      task((err, data) => {
-        this.active--;
+  _flush() {
+    while (this.queue.length !== 0) {
+      const { apiFn, onComplete } = this.queue.shift();
+      apiFn((err, data) => {
         if (err) {
           onComplete(err);
         } else {
-          onComplete(null, data);
+          onComplete(err, data);
         }
-        this.runNext();
       });
     }
   }
 }
+const api = new GuardedAPI();
+let initDone = false;
 
-const pq = new DynamicPriorityQueue(1);
-const results = [];
+api.init((cb) => {
+  setTimeout(() => {
+    initDone = true;
+    cb(null);
+  }, 50);
+});
 
-const checkDone = () => {
-  if (results.length === 3) {
+api.call(
+  (cb) => cb(null, "success"),
+  (err, data) => {
     // try {
-    //   expect(results).toEqual(["first", "high", "low"]);
+    //   expect(initDone).toBe(true);
+    //   expect(data).toBe("success");
     //   done();
     // } catch (e) {
     //   done(e);
     // }
-    console.log(results);
-  }
-};
-
-pq.add(
-  (cb) => setTimeout(() => cb(null, "first"), 50),
-  0,
-  (err, res) => {
-    results.push(res);
-    checkDone();
-  },
-);
-
-pq.add(
-  (cb) => setTimeout(() => cb(null, "low"), 10),
-  0,
-  (err, res) => {
-    results.push(res);
-    checkDone();
-  },
-);
-
-pq.add(
-  (cb) => setTimeout(() => cb(null, "high"), 10),
-  10,
-  (err, res) => {
-    results.push(res);
-    checkDone();
+    console.log("initDone", initDone);
+    console.log("data", data);
   },
 );
