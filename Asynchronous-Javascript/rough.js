@@ -76,5 +76,3 @@ pq.add(
     checkDone();
   },
 );
-
-pq.setLimit(2);
