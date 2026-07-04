@@ -1,47 +1,53 @@
-function batchProcess(items, limit, worker, onComplete) {
-  const queue = [];
-  const result = [];
-  let index = 0;
-  let completed = 1;
-  while (index < limit) {
-    queue[index] = { idx: index, time: items[index] };
-    index += 1;
+class CallbackPool {
+  constructor(limit) {
+    this.limit = limit;
+    this.queue = [];
+    this.active = 0;
   }
 
-  while (queue.length > 0) {
-    const { idx, time } = queue.shift();
-    worker(time, (err, data) => {
-      result[idx] = data;
-      if (completed === items.length) {
+  run(task, onComplete) {
+    this.queue.push({ task, onComplete });
+    this._next();
+  }
+
+  _next() {
+    while (this.active < this.limit && this.queue.length !== 0) {
+      const { task, onComplete } = this.queue.shift();
+      this.active += 1;
+      task((err, data) => {
+        this.active--;
         if (err) {
           onComplete(err);
         } else {
-          onComplete(null, result);
+          onComplete(null, data);
         }
-      }
-
-      completed += 1;
-    });
-    if (index < items.length) {
-      queue.push({ idx: index, time: items[index] });
-      index += 1;
+        this._next();
+      });
     }
   }
 }
-const items = [20, 20, 20, 20, 20];
-let runningCounter = 0;
-let maxObserved = 0;
 
-const worker = (item, cb) => {
-  runningCounter++;
-  maxObserved = Math.max(maxObserved, runningCounter);
+const pool = new CallbackPool(2);
+let activeCount = 0;
+let maxActive = 0;
+let finished = 0;
 
+const task = (cb) => {
+  activeCount++;
+  maxActive = Math.max(maxActive, activeCount);
   setTimeout(() => {
-    runningCounter--;
-    cb(null, item);
-  }, 10);
+    activeCount--;
+    cb(null, "done");
+  }, 20);
 };
 
-batchProcess(items, 2, worker, (err, results) => {
-  console.log(maxObserved);
-});
+const handleComplete = () => {
+  finished++;
+  if (finished === 5) {
+    console.log(maxActive);
+  }
+};
+
+for (let i = 0; i < 5; i++) {
+  pool.run(task, handleComplete);
+}
