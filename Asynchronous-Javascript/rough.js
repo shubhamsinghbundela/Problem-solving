@@ -1,52 +1,38 @@
-class GuardedAPI {
-  constructor() {
-    this.queue = [];
-  }
+function hedgedRequest(primary, secondary, timeoutMs, onComplete) {
+  let flag = true;
+  primary((err, data) => {
+    if (flag) {
+      if (err) {
+        onComplete(err);
+      } else {
+        flag = false;
+        onComplete(null, data);
+      }
+    }
+  });
 
-  init(initTask) {
-    initTask((err, data) => {
-      this._flush();
-    });
-  }
-
-  call(apiFn, onComplete) {
-    this.queue.push({ apiFn, onComplete });
-  }
-
-  _flush() {
-    while (this.queue.length !== 0) {
-      const { apiFn, onComplete } = this.queue.shift();
-      apiFn((err, data) => {
+  setTimeout(() => {
+    if (flag) {
+      flag = false;
+      secondary((err, data) => {
         if (err) {
           onComplete(err);
         } else {
-          onComplete(err, data);
+          onComplete(null, data);
         }
       });
     }
-  }
+  }, timeoutMs);
 }
-const api = new GuardedAPI();
-let initDone = false;
+const primary = (cb) => setTimeout(() => cb(null, "PRIMARY_SLOW"), 100);
+const secondary = (cb) => setTimeout(() => cb(null, "SECONDARY_FAST"), 10);
 
-api.init((cb) => {
-  setTimeout(() => {
-    initDone = true;
-    cb(null);
-  }, 50);
+hedgedRequest(primary, secondary, 30, (err, data) => {
+  console.log(data);
+  // try {
+  //   expect(data).toBe("SECONDARY_FAST");
+  //   done();
+  // } catch (e) {
+  //   done(e);
+  // }
 });
-
-api.call(
-  (cb) => cb(null, "success"),
-  (err, data) => {
-    // try {
-    //   expect(initDone).toBe(true);
-    //   expect(data).toBe("success");
-    //   done();
-    // } catch (e) {
-    //   done(e);
-    // }
-    console.log("initDone", initDone);
-    console.log("data", data);
-  },
-);
