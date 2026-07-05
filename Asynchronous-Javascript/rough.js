@@ -1,35 +1,35 @@
-function createSmartDebounce(worker, waitMs) {
-  let timerId;
+function createWindowAggregator(windowSize, onWindowReady) {
+  let arr = [];
+  let sum = 0;
   return function (...args) {
-    clearTimeout(timerId);
-    timerId = setTimeout(() => {
-      worker(...args);
-    }, waitMs);
+    arr.push(...args);
+    let avg = 0;
+    if (arr.length <= windowSize) {
+      sum += arr[arr.length - 1];
+      avg = sum / arr.length;
+    } else {
+      for (let i = windowSize; i < arr.length; i++) {
+        sum += arr[i];
+        sum -= arr[i - windowSize];
+      }
+      avg = sum / windowSize;
+    }
+
+    onWindowReady(avg);
   };
 }
-
-const worker = (input, cb) => {
-  const delay = input === "first" ? 100 : 20;
-  setTimeout(() => cb(null, input), delay);
-};
-
-const debounced = createSmartDebounce(worker, 50);
 const results = [];
 
-debounced("first", (err, data) => {
-  results.push(data);
-});
-
-setTimeout(() => {
-  debounced("second", (err, data) => {
-    results.push(data);
+const onWindowReady = (avg) => {
+  results.push(avg);
+  if (results.length === 4) {
     console.log(results);
-    // try {
-    //   expect(results).toEqual(["second"]);
-    //   expect(results).not.toContain("first");
-    //   done();
-    // } catch (e) {
-    //   done(e);
-    // }
-  });
-}, 60);
+  }
+};
+
+const add = createWindowAggregator(3, onWindowReady);
+
+add(1);
+add(2);
+add(3);
+add(10);
