@@ -1,56 +1,54 @@
-class LeakyBucket {
-  constructor(capacity, leakRateMs) {
-    this.limit = capacity;
-    this.leakRateMs = leakRateMs;
-    this.queue = [];
-    this.totalRequest = 0;
-    this.flag = true;
-  }
+function mapLimit(tasks, limit, onAllFinished) {
+  let active = 0;
+  let completed = 0;
+  let index = 0;
+  let results = [];
 
-  add(task, onComplete) {
-    this.totalRequest += 1;
-    if (this.totalRequest > this.limit) {
-      let err = {};
-      err.message = "Rate Limit Exceed";
-      onComplete(err);
-      return;
+  function next() {
+    if (completed == tasks.length) {
+      onAllFinished(null, results);
     }
-    this.queue.push({ task, onComplete });
-    this._process();
-  }
-
-  _process() {
-    if (this.flag && this.queue.length) {
-      this.flag = false;
-      setTimeout(() => {
-        const { task, onComplete } = this.queue.shift();
-        task((err, data) => {
-          if (err) {
-            onComplete(err);
-          } else {
-            onComplete(null, data);
-          }
-          this.flag = true;
-          this._process();
-        });
-      }, this.leakRateMs);
+    while (active < limit && index < tasks.length) {
+      let currentIndex = index;
+      active += 1;
+      index += 1;
+      tasks[currentIndex]((err, data) => {
+        results[currentIndex] = data;
+        active -= 1;
+        completed++;
+        next();
+      });
     }
   }
+  next();
 }
+const tasks = [
+  (cb) => setTimeout(() => cb(null, "A"), 50),
+  (cb) => setTimeout(() => cb(null, "B"), 10),
+  (cb) => setTimeout(() => cb(null, "C"), 30),
+];
 
-const bucket = new LeakyBucket(1, 50);
+let maxRunning = 0;
+let currentlyRunning = 0;
 
-const slowTask = (cb) => setTimeout(() => cb(null), 100);
+const trackedTasks = tasks.map((task) => (cb) => {
+  currentlyRunning++;
+  maxRunning = Math.max(maxRunning, currentlyRunning);
 
-bucket.add(slowTask, () => {});
+  task((err, data) => {
+    currentlyRunning--;
+    cb(err, data);
+  });
+});
 
-bucket.add(slowTask, (err) => {
+mapLimit(trackedTasks, 2, (err, results) => {
   // try {
-  //   expect(err).toBeDefined();
-  //   expect(err.message).toBe("Rate Limit Exceeded");
+  //   expect(err).toBeNull();
+  //   expect(results).toEqual(["A", "B", "C"]);
+  //   expect(maxRunning).toBeLessThanOrEqual(2);
   //   done();
   // } catch (e) {
   //   done(e);
   // }
-  console.log(err.message);
+  console.log(results);
 });
