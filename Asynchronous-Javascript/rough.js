@@ -1,54 +1,44 @@
-function mapLimit(tasks, limit, onAllFinished) {
-  let active = 0;
-  let completed = 0;
-  let index = 0;
-  let results = [];
-
-  function next() {
-    if (completed == tasks.length) {
-      onAllFinished(null, results);
-    }
-    while (active < limit && index < tasks.length) {
-      let currentIndex = index;
-      active += 1;
-      index += 1;
-      tasks[currentIndex]((err, data) => {
-        results[currentIndex] = data;
-        active -= 1;
-        completed++;
-        next();
-      });
-    }
+class Scheduler {
+  constructor() {
+    this.queue = [];
   }
-  next();
+
+  schedule(task, priority = 0) {
+    this.queue.push({ task, priority });
+    this.queue.sort((a, b) => b.priority - a.priority);
+  }
+
+  run(onAllFinished) {
+    if (this.queue.length === 0) {
+      return onAllFinished && onAllFinished(null);
+    }
+    const { task } = this.queue.shift();
+    task((err, data) => {
+      this.run(onAllFinished);
+    });
+  }
 }
-const tasks = [
-  (cb) => setTimeout(() => cb(null, "A"), 50),
-  (cb) => setTimeout(() => cb(null, "B"), 10),
-  (cb) => setTimeout(() => cb(null, "C"), 30),
-];
 
-let maxRunning = 0;
-let currentlyRunning = 0;
+const scheduler = new Scheduler();
+const results = [];
 
-const trackedTasks = tasks.map((task) => (cb) => {
-  currentlyRunning++;
-  maxRunning = Math.max(maxRunning, currentlyRunning);
+const createTask = (val) => (cb) => {
+  console.log(val);
+  results.push(val);
+  cb(null);
+};
 
-  task((err, data) => {
-    currentlyRunning--;
-    cb(err, data);
-  });
-});
+scheduler.schedule(createTask("low"), 0);
+scheduler.schedule(createTask("high"), 10);
+scheduler.schedule(createTask("medium"), 5);
 
-mapLimit(trackedTasks, 2, (err, results) => {
+scheduler.run((err) => {
+  console.log(results);
   // try {
   //   expect(err).toBeNull();
-  //   expect(results).toEqual(["A", "B", "C"]);
-  //   expect(maxRunning).toBeLessThanOrEqual(2);
+  //   expect(results).toEqual(["high", "medium", "low"]);
   //   done();
   // } catch (e) {
   //   done(e);
   // }
-  console.log(results);
 });
