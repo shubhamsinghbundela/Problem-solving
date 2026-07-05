@@ -1,50 +1,56 @@
-class Mutex {
-  constructor() {
+class LeakyBucket {
+  constructor(capacity, leakRateMs) {
+    this.limit = capacity;
+    this.leakRateMs = leakRateMs;
     this.queue = [];
+    this.totalRequest = 0;
     this.flag = true;
   }
 
-  lock(task, onComplete) {
+  add(task, onComplete) {
+    this.totalRequest += 1;
+    if (this.totalRequest > this.limit) {
+      let err = {};
+      err.message = "Rate Limit Exceed";
+      onComplete(err);
+      return;
+    }
     this.queue.push({ task, onComplete });
-    this._release();
+    this._process();
   }
 
-  _release() {
+  _process() {
     if (this.flag && this.queue.length) {
       this.flag = false;
-      const { task, onComplete } = this.queue.shift();
-      task((err, data) => {
-        if (err) {
-          onComplete(err);
-        } else {
-          onComplete(null, data);
-        }
-        this.flag = true;
-        this._release();
-      });
+      setTimeout(() => {
+        const { task, onComplete } = this.queue.shift();
+        task((err, data) => {
+          if (err) {
+            onComplete(err);
+          } else {
+            onComplete(null, data);
+          }
+          this.flag = true;
+          this._process();
+        });
+      }, this.leakRateMs);
     }
   }
 }
-const mutex = new Mutex();
-const results = [];
 
-mutex.lock(
-  (cb) => setTimeout(() => cb(null, "TASK_A"), 50),
-  (err, data) => {
-    results.push(data);
-  },
-);
+const bucket = new LeakyBucket(1, 50);
 
-mutex.lock(
-  (cb) => setTimeout(() => cb(null, "TASK_B"), 10),
-  (err, data) => {
-    results.push(data);
-    console.log(results);
-    // try {
-    //   expect(results).toEqual(["TASK_A", "TASK_B"]);
-    //   done();
-    // } catch (e) {
-    //   done(e);
-    // }
-  },
-);
+const slowTask = (cb) => setTimeout(() => cb(null), 100);
+
+bucket.add(slowTask, () => {});
+
+bucket.add(slowTask, (err) => {
+  // try {
+  //   expect(err).toBeDefined();
+  //   expect(err.message).toBe("Rate Limit Exceeded");
+  //   done();
+  // } catch (e) {
+  //   done(e);
+  // }
+  console.log(err.message);
+});

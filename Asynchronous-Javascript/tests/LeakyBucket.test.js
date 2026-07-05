@@ -12,7 +12,9 @@ describe("LeakyBucket Callback", () => {
         try {
           expect(results).toEqual([1, 2, 3]);
           done();
-        } catch (e) { done(e); }
+        } catch (e) {
+          done(e);
+        }
       }
     };
 
@@ -21,9 +23,18 @@ describe("LeakyBucket Callback", () => {
       cb(null, val);
     };
 
-    bucket.add((cb) => task(1, cb), (err, res) => checkDone());
-    bucket.add((cb) => task(2, cb), (err, res) => checkDone());
-    bucket.add((cb) => task(3, cb), (err, res) => checkDone());
+    bucket.add(
+      (cb) => task(1, cb),
+      (err, res) => checkDone(),
+    );
+    bucket.add(
+      (cb) => task(2, cb),
+      (err, res) => checkDone(),
+    );
+    bucket.add(
+      (cb) => task(3, cb),
+      (err, res) => checkDone(),
+    );
   });
 
   test("enforces leak rate between task executions", (done) => {
@@ -38,7 +49,9 @@ describe("LeakyBucket Callback", () => {
           expect(timestamps[1] - timestamps[0]).toBeGreaterThanOrEqual(45);
           expect(timestamps[2] - timestamps[1]).toBeGreaterThanOrEqual(45);
           done();
-        } catch (e) { done(e); }
+        } catch (e) {
+          done(e);
+        }
       }
     };
 
@@ -64,7 +77,9 @@ describe("LeakyBucket Callback", () => {
         expect(err).toBeDefined();
         expect(err.message).toBe("Rate Limit Exceeded");
         done();
-      } catch (e) { done(e); }
+      } catch (e) {
+        done(e);
+      }
     });
   });
 
@@ -79,25 +94,38 @@ describe("LeakyBucket Callback", () => {
         try {
           expect(results).toEqual(["ok", "ok"]);
           done();
-        } catch (e) { done(e); }
+        } catch (e) {
+          done(e);
+        }
       }
     };
 
-    bucket.add((cb) => cb(null, "ok"), (err, res) => {
-      if (res) results.push(res);
-      checkDone();
-    });
-
-    bucket.add((cb) => cb(new Error("fail")), (err) => {
-      try {
-        expect(err.message).toBe("fail");
+    bucket.add(
+      (cb) => cb(null, "ok"),
+      (err, res) => {
+        if (res) results.push(res);
         checkDone();
-      } catch (e) { done(e); }
-    });
+      },
+    );
 
-    bucket.add((cb) => cb(null, "ok"), (err, res) => {
-      if (res) results.push(res);
-      checkDone();
-    });
+    bucket.add(
+      (cb) => cb(new Error("fail")),
+      (err) => {
+        try {
+          expect(err.message).toBe("fail");
+          checkDone();
+        } catch (e) {
+          done(e);
+        }
+      },
+    );
+
+    bucket.add(
+      (cb) => cb(null, "ok"),
+      (err, res) => {
+        if (res) results.push(res);
+        checkDone();
+      },
+    );
   });
 });
