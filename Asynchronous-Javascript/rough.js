@@ -1,44 +1,23 @@
-class Scheduler {
-  constructor() {
-    this.queue = [];
-  }
+(async () => {
+  const scheduler = new TimeSlicedScheduler();
+  const events = [];
 
-  schedule(task, priority = 0) {
-    this.queue.push({ task, priority });
-    this.queue.sort((a, b) => b.priority - a.priority);
-  }
+  scheduler.schedule(async () => {
+    events.push("task-1");
+  });
 
-  run(onAllFinished) {
-    if (this.queue.length === 0) {
-      return onAllFinished && onAllFinished(null);
-    }
-    const { task } = this.queue.shift();
-    task((err, data) => {
-      this.run(onAllFinished);
-    });
-  }
-}
+  scheduler.schedule(async () => {
+    events.push("task-2");
+  });
 
-const scheduler = new Scheduler();
-const results = [];
+  const runPromise = scheduler.run();
+  console.log(runPromise);
 
-const createTask = (val) => (cb) => {
-  console.log(val);
-  results.push(val);
-  cb(null);
-};
+  await new Promise((r) => setTimeout(r, 0));
+  events.push("event-loop");
 
-scheduler.schedule(createTask("low"), 0);
-scheduler.schedule(createTask("high"), 10);
-scheduler.schedule(createTask("medium"), 5);
+  await runPromise;
+  console.log(events);
 
-scheduler.run((err) => {
-  console.log(results);
-  // try {
-  //   expect(err).toBeNull();
-  //   expect(results).toEqual(["high", "medium", "low"]);
-  //   done();
-  // } catch (e) {
-  //   done(e);
-  // }
-});
+  // expect(events).toEqual(["task-1", "event-loop", "task-2"]);
+})();

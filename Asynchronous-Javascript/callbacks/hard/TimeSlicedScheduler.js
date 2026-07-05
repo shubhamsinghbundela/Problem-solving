@@ -7,13 +7,23 @@
 // higher-priority or newly arrived tasks can execute.
 //
 // This simulates cooperative multitasking used in UI frameworks.
-
 class TimeSlicedScheduler {
-  constructor() {}
+  constructor() {
+    this.queue = [];
+  }
 
-  schedule(task) {}
+  schedule(task) {
+    this.queue.push(task);
+  }
 
-  async run() {}
+  async run() {
+    while (this.queue.length) {
+      const task = this.queue.shift();
+
+      await task();
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
 }
 
 module.exports = TimeSlicedScheduler;
