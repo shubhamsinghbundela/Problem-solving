@@ -1,28 +1,23 @@
-async function doubleTry(fn) {
-  try {
-    return await fn();
-  } catch (err) {
-    return await fn();
-  }
+function ensureAsync(fn) {
+  return async function (...args) {
+    try {
+      return fn(...args);
+    } catch (err) {
+      return err;
+    }
+  };
 }
-
-let callCount = 0;
-const fn = async () => {
-  callCount++;
-  return "Success";
+// test("propagates thrown errors as rejected promises", async () => {
+const syncThrow = () => {
+  throw new Error("boom");
 };
 
-(async () => {
-  let callCount = 0;
-  const fn = async () => {
-    callCount++;
-    if (callCount === 1) throw new Error("First Failure");
-    return "Second Success";
-  };
+const wrapped = ensureAsync(syncThrow);
+console.log(
+  wrapped().catch((err) => {
+    console.log(err);
+  }),
+);
 
-  const result = await doubleTry(fn);
-  console.log(result);
-  console.log(callCount);
-  // expect(result).toBe("Second Success");
-  // expect(callCount).toBe(2);
-})();
+// await expect(wrapped()).rejects.toThrow("boom");
+// });
