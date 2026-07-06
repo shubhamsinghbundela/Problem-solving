@@ -1,17 +1,23 @@
-async function promiseRace(promises) {
-  return new Promise((resolve, reject) => {
-    promises.forEach((ele, idx) => {
-      Promise.resolve(ele)
-        .then((data) => resolve(data))
-        .catch((err) => reject(err));
+function promisify(fn) {
+  return function (...args) {
+    return new Promise((res, rej) => {
+      fn(...args, (err, data) => {
+        if (err) {
+          rej(err);
+        } else {
+          res(data);
+        }
+      });
     });
-  });
+  };
 }
 
 (async () => {
-  const race = promiseRace([]);
+  const slowSquare = (n, cb) => {
+    setTimeout(() => cb(null, n * n), 10);
+  };
 
-  const timeout = new Promise((res) => setTimeout(res, 100, "timeout"));
-  const result = await Promise.race([race, timeout]);
+  const promisedSquare = promisify(slowSquare);
+  const result = await promisedSquare(5);
   console.log(result);
 })();
