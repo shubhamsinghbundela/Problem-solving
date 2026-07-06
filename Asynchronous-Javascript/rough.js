@@ -1,22 +1,17 @@
-async function promiseAny(promises) {
+async function promiseRace(promises) {
   return new Promise((resolve, reject) => {
-    let errCount = 0;
     promises.forEach((ele, idx) => {
       Promise.resolve(ele)
         .then((data) => resolve(data))
-        .catch((err) => {
-          errCount += 1;
-          if (errCount === promises.length) {
-            reject(new Error("All promises were rejected"));
-          }
-        });
+        .catch((err) => reject(err));
     });
   });
 }
 
 (async () => {
-  const result = await promiseAny([Promise.reject("err"), 42]);
+  const race = promiseRace([]);
+
+  const timeout = new Promise((res) => setTimeout(res, 100, "timeout"));
+  const result = await Promise.race([race, timeout]);
   console.log(result);
 })();
-
-// expect(result).toEqual([1, 2, 3]);
