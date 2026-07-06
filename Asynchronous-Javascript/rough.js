@@ -1,23 +1,8 @@
-function ensureAsync(fn) {
-  return async function (...args) {
-    try {
-      return fn(...args);
-    } catch (err) {
-      return err;
-    }
-  };
+async function getUserPosts(userId) {
+  try {
+    const user = await fetchUser(userId);
+    return await fetchPosts(user.id);
+  } catch (e) {
+    console.error(e);
+  }
 }
-// test("propagates thrown errors as rejected promises", async () => {
-const syncThrow = () => {
-  throw new Error("boom");
-};
-
-const wrapped = ensureAsync(syncThrow);
-console.log(
-  wrapped().catch((err) => {
-    console.log(err);
-  }),
-);
-
-// await expect(wrapped()).rejects.toThrow("boom");
-// });
