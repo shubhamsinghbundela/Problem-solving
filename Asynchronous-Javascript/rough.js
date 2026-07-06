@@ -1,20 +1,27 @@
-async function sumPromises(p1, p2) {
-  return new Promise(async (res, rej) => {
-    try {
-      const arr = await Promise.all([p1, p2]);
-      const sum = arr.reduce((acc, ele) => acc + ele, 0);
-      res(sum);
-    } catch (err) {
-      rej(err);
-    }
-  });
+function timeLimit(fn, t) {
+  return function (...args) {
+    return new Promise(async (resolve, reject) => {
+      fn(...args).then((data) => {
+        flag = false;
+        resolve(data);
+      });
+      setTimeout(() => {
+        // if (flag) {
+        reject("Time Limit exceed");
+        // }
+      }, t);
+    });
+  };
 }
 
 (async () => {
-  const p1 = Promise.resolve(10);
-  const p2 = Promise.resolve(20);
+  const fn = async () => {
+    await new Promise((res) => setTimeout(res, 150));
+    return "done";
+  };
 
-  const result = await sumPromises(p1, p2);
-  console.log(result);
-  // expect(result).toBe(30);
+  const limitedFn = timeLimit(fn, 50);
+  console.log(await limitedFn());
+
+  // await expect(limitedFn()).rejects.toBe("Time Limit Exceeded");
 })();
