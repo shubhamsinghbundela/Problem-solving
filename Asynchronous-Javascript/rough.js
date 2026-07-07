@@ -1,29 +1,52 @@
-class AsyncEventEmitter {
-  constructor() {
-    this.obj = {};
+async function asyncReduceLimited(
+  array,
+  limit,
+  asyncProcessFn,
+  reducer,
+  initialValue,
+) {
+  const result = await mapAsyncLimit(array, limit, asyncProcessFn);
+  let accumulator = initialValue;
+
+  for (const value of result) {
+    accumulator = reducer(accumulator, value);
   }
 
-  on(event, listener) {
-    if (Array.isArray(this.obj[event])) {
-      this.obj[event].push(listener);
-    } else {
-      this.obj[event] = [];
-      this.obj[event].push(listener);
-    }
-  }
+  return accumulator;
+}
 
-  emit(event, data) {
-    console.log(!Array.isArray(this.obj[event]));
-    if (!Array.isArray(this.obj[event])) {
-      return [];
+async function mapAsyncLimit(array, limit, asyncFn) {
+  return new Promise((res, rej) => {
+    let active = 0;
+    let index = 0;
+    let completed = 0;
+    function next() {
+      if (completed === array.length) {
+        res(array);
+      }
+      while (active < limit && index < array.length) {
+        let currentIndex = index;
+        active += 1;
+        index += 1;
+        asyncFn(array[currentIndex]).then((data) => {
+          array[currentIndex] = data;
+          active--;
+          completed++;
+          next();
+        });
+      }
     }
-    const promises = this.obj[event]?.map((e) => e());
-    return Promise.allSettled(promises);
-  }
+    next();
+  });
 }
 
 (async () => {
-  const emitter = new AsyncEventEmitter();
-  const results = await emitter.emit("non-existent");
-  expect(results).toEqual([]);
+  const result = await asyncReduceLimited(
+    [],
+    2,
+    async () => 1,
+    (acc, val) => acc + val,
+    10,
+  );
+  console.log(result);
 })();
