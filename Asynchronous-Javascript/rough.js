@@ -1,11 +1,29 @@
+class AsyncEventEmitter {
+  constructor() {
+    this.obj = {};
+  }
+
+  on(event, listener) {
+    if (Array.isArray(this.obj[event])) {
+      this.obj[event].push(listener);
+    } else {
+      this.obj[event] = [];
+      this.obj[event].push(listener);
+    }
+  }
+
+  emit(event, data) {
+    console.log(!Array.isArray(this.obj[event]));
+    if (!Array.isArray(this.obj[event])) {
+      return [];
+    }
+    const promises = this.obj[event]?.map((e) => e());
+    return Promise.allSettled(promises);
+  }
+}
+
 (async () => {
-  const fn = async () => {
-    await new Promise((res) => setTimeout(res, 150));
-    return "done";
-  };
-
-  const limitedFn = timeLimit(fn, 50);
-  console.log(await limitedFn());
-
-  // await expect(limitedFn()).rejects.toBe("Time Limit Exceeded");
+  const emitter = new AsyncEventEmitter();
+  const results = await emitter.emit("non-existent");
+  expect(results).toEqual([]);
 })();
