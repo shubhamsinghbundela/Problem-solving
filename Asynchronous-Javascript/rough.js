@@ -1,50 +1,34 @@
-class Barrier {
-  constructor() {
-    this.opened = false;
-    this.waiters = [];
-  }
-  wait() {
-    return new Promise((resolve) => {
-      if (this.opened) {
-        resolve();
-      } else {
-        this.waiters.push(resolve);
+async function batchAll(tasks, batchSize) {
+  return new Promise((resolve, reject) => {
+    let active = 0;
+    let index = 0;
+    let result = [];
+    let completed = 0;
+    function next() {
+      if (completed == tasks.length) {
+        resolve(result);
       }
-    });
-  }
-  open() {
-    this.opened = true;
-
-    for (const resolve of this.waiters) {
-      resolve();
+      while (active < batchSize && index < tasks.length) {
+        let currentIndex = index;
+        active += 1;
+        index += 1;
+        tasks[currentIndex]().then((data) => {
+          result[currentIndex] = data;
+          active -= 1;
+          completed += 1;
+          next();
+        });
+      }
     }
-
-    this.waiters = [];
-  }
+    next();
+  });
 }
 
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 (async () => {
-  const barrier = new Barrier();
-  let count = 0;
+  const tasks = [() => Promise.resolve(1), () => Promise.resolve(2)];
 
-  const waiter = async () => {
-    await barrier.wait();
-    count++;
-  };
-
-  const p1 = waiter();
-  console.log(p1);
-  const p2 = waiter();
-  console.log(p2);
-  const p3 = waiter();
-  console.log(p3);
-
-  console.log(count);
-  // expect(count).toBe(0);
-
-  barrier.open();
-  await Promise.all([p1, p2, p3]);
-
-  console.log(count);
-  // expect(count).toBe(3);
+  const result = await batchAll(tasks, 5);
+  console.log(result);
+  // expect(result).toEqual([1, 2]);
 })();
