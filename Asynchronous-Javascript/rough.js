@@ -1,37 +1,38 @@
-function createSharedRequest(apiCallFn) {
+function createWindowAggregatorPromise(batchProcessFn, size, windowMs) {
   let arr = [];
-
-  return function () {
-    if (arr.length === 1) {
-      return arr[0];
-    }
-
-    const result = Promise.resolve()
-      .then(() => apiCallFn())
-      .finally(() => arr.pop());
-
-    arr.push(result);
-
-    return result;
+  let timer;
+  return {
+    add: function (...args) {
+      arr.push(...args);
+      if (arr.length == size) {
+        batchProcessFn(arr).then(() => {
+          timer = null;
+          arr = [];
+        });
+      }
+      if (!timer) {
+        timer = setTimeout(() => {
+          batchProcessFn(arr).then(() => {
+            timer = null;
+            arr = [];
+          });
+        }, windowMs);
+      }
+    },
   };
 }
 (async () => {
   let callCount = 0;
-  const api = async () => {
+  const processor = async () => {
     callCount++;
-    return `Result ${callCount}`;
   };
 
-  const sharedApi = createSharedRequest(api);
-  console.log(sharedApi);
+  const { add } = createWindowAggregatorPromise(processor, 2, 50);
 
-  const first = await sharedApi();
-  console.log(first);
-  // expect(first).toBe("Result 1");
+  add(1);
+  add(2);
 
-  const second = await sharedApi();
-  console.log(second);
-  // expect(second).toBe("Result 2");
-  // expect(callCount).toBe(2);
+  await new Promise((r) => setTimeout(r, 100));
+  console.log(callCount);
   // expect(callCount).toBe(1);
 })();

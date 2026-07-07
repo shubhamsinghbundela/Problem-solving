@@ -1,4 +1,3 @@
-
 // Problem Description – Sliding Window Aggregator
 //
 // You are required to implement createWindowAggregator(batchProcessFn, size, windowMs).
@@ -11,6 +10,35 @@
 // 3. If windowMs expires before reaching size, call batchProcessFn with the partial batch
 // 4. After processing, reset the batch and start a new window
 
-function createWindowAggregatorPromise(batchProcessFn, size, windowMs) { }
+function createWindowAggregatorPromise(batchProcessFn, size, windowMs) {
+  let arr = [];
+  let timer = null;
+  return {
+    add: function (...args) {
+      arr.push(...args);
+      if (arr.length == size) {
+        clearTimeout(timer);
+        timer = null;
+
+        const batch = [...arr];
+        arr = [];
+
+        batchProcessFn(batch);
+        return;
+      }
+      if (!timer) {
+        timer = setTimeout(() => {
+          if (arr.length === 0) return;
+
+          const batch = [...arr];
+          arr = [];
+
+          timer = null;
+          batchProcessFn(batch);
+        }, windowMs);
+      }
+    },
+  };
+}
 
 module.exports = createWindowAggregatorPromise;
