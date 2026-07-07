@@ -1,52 +1,38 @@
-async function asyncReduceLimited(
-  array,
-  limit,
-  asyncProcessFn,
-  reducer,
-  initialValue,
-) {
-  const result = await mapAsyncLimit(array, limit, asyncProcessFn);
-  let accumulator = initialValue;
-
-  for (const value of result) {
-    accumulator = reducer(accumulator, value);
-  }
-
-  return accumulator;
-}
-
-async function mapAsyncLimit(array, limit, asyncFn) {
-  return new Promise((res, rej) => {
-    let active = 0;
-    let index = 0;
+function asyncWaterfall(tasks, initialValue) {
+  return new Promise((resolve, reject) => {
+    let result = initialValue;
     let completed = 0;
-    function next() {
-      if (completed === array.length) {
-        res(array);
+    let index = 0;
+    async function next() {
+      if (completed === tasks.length) {
+        resolve(result);
       }
-      while (active < limit && index < array.length) {
-        let currentIndex = index;
-        active += 1;
-        index += 1;
-        asyncFn(array[currentIndex]).then((data) => {
-          array[currentIndex] = data;
-          active--;
-          completed++;
-          next();
-        });
+
+      if (index < tasks.length) {
+        tasks[index](result)
+          .then((data) => {
+            result = data;
+            index += 1;
+            completed += 1;
+            next();
+          })
+          .catch(reject);
       }
     }
     next();
   });
 }
 
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 (async () => {
-  const result = await asyncReduceLimited(
-    [],
-    2,
+  const tasks = [
     async () => 1,
-    (acc, val) => acc + val,
-    10,
-  );
-  console.log(result);
+    async () => {
+      throw new Error("boom");
+    },
+    async () => 3,
+  ];
+
+  console.log(await asyncWaterfall(tasks, 0));
+  // await expect(asyncWaterfall(tasks, 0)).rejects.toThrow("boom");
 })();
