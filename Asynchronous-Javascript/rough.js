@@ -1,34 +1,33 @@
-async function batchAll(tasks, batchSize) {
-  return new Promise((resolve, reject) => {
-    let active = 0;
-    let index = 0;
-    let result = [];
-    let completed = 0;
-    function next() {
-      if (completed == tasks.length) {
-        resolve(result);
-      }
-      while (active < batchSize && index < tasks.length) {
-        let currentIndex = index;
-        active += 1;
-        index += 1;
-        tasks[currentIndex]().then((data) => {
-          result[currentIndex] = data;
-          active -= 1;
-          completed += 1;
-          next();
-        });
-      }
-    }
-    next();
-  });
+function createIdempotentExecutor() {
+  let obj = {};
+
+  return function (...args) {
+    const key = args.shift();
+    const fn = args.pop();
+
+    // if (obj[key]) {
+    //   return obj[key];
+    // }
+
+    obj[key] = new Promise((res, rej) => {
+      Promise.resolve(fn()).then(res).catch(rej);
+    });
+
+    return obj[key];
+  };
 }
-
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 (async () => {
-  const tasks = [() => Promise.resolve(1), () => Promise.resolve(2)];
+  const run = createIdempotentExecutor();
+  let calls = 0;
 
-  const result = await batchAll(tasks, 5);
-  console.log(result);
-  // expect(result).toEqual([1, 2]);
+  const fn = async () => {
+    calls++;
+    return calls;
+  };
+
+  const r1 = await run("B", fn);
+  const r2 = await run("B", fn);
+  console.log(r2);
+  // expect(r1).toBe(1);
+  // expect(r2).toBe(2);
 })();

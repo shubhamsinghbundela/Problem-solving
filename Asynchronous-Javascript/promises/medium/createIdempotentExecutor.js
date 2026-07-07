@@ -6,7 +6,22 @@
 //
 // This problem tests deduplication and state synchronization.
 //
+function createIdempotentExecutor() {
+  const inFlight = {};
 
-function createIdempotentExecutor() {}
+  return function (key, fn) {
+    if (inFlight[key]) {
+      return inFlight[key];
+    }
+
+    inFlight[key] = Promise.resolve()
+      .then(() => fn())
+      .finally(() => {
+        delete inFlight[key];
+      });
+
+    return inFlight[key];
+  };
+}
 
 module.exports = createIdempotentExecutor;
