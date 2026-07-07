@@ -11,9 +11,28 @@
 // it should resolve immediately.
 
 class Barrier {
-  constructor() { }
-  wait() { }
-  open() { }
+  constructor() {
+    this.opened = false;
+    this.waiters = [];
+  }
+  wait() {
+    return new Promise((resolve) => {
+      if (this.opened) {
+        resolve();
+      } else {
+        this.waiters.push(resolve);
+      }
+    });
+  }
+  open() {
+    this.opened = true;
+
+    for (const resolve of this.waiters) {
+      resolve();
+    }
+
+    this.waiters = [];
+  }
 }
 
 module.exports = Barrier;

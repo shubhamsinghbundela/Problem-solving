@@ -1,38 +1,50 @@
-function asyncWaterfall(tasks, initialValue) {
-  return new Promise((resolve, reject) => {
-    let result = initialValue;
-    let completed = 0;
-    let index = 0;
-    async function next() {
-      if (completed === tasks.length) {
-        resolve(result);
+class Barrier {
+  constructor() {
+    this.opened = false;
+    this.waiters = [];
+  }
+  wait() {
+    return new Promise((resolve) => {
+      if (this.opened) {
+        resolve();
+      } else {
+        this.waiters.push(resolve);
       }
+    });
+  }
+  open() {
+    this.opened = true;
 
-      if (index < tasks.length) {
-        tasks[index](result)
-          .then((data) => {
-            result = data;
-            index += 1;
-            completed += 1;
-            next();
-          })
-          .catch(reject);
-      }
+    for (const resolve of this.waiters) {
+      resolve();
     }
-    next();
-  });
+
+    this.waiters = [];
+  }
 }
 
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 (async () => {
-  const tasks = [
-    async () => 1,
-    async () => {
-      throw new Error("boom");
-    },
-    async () => 3,
-  ];
+  const barrier = new Barrier();
+  let count = 0;
 
-  console.log(await asyncWaterfall(tasks, 0));
-  // await expect(asyncWaterfall(tasks, 0)).rejects.toThrow("boom");
+  const waiter = async () => {
+    await barrier.wait();
+    count++;
+  };
+
+  const p1 = waiter();
+  console.log(p1);
+  const p2 = waiter();
+  console.log(p2);
+  const p3 = waiter();
+  console.log(p3);
+
+  console.log(count);
+  // expect(count).toBe(0);
+
+  barrier.open();
+  await Promise.all([p1, p2, p3]);
+
+  console.log(count);
+  // expect(count).toBe(3);
 })();
