@@ -1,33 +1,37 @@
-function createIdempotentExecutor() {
-  let obj = {};
+function createSharedRequest(apiCallFn) {
+  let arr = [];
 
-  return function (...args) {
-    const key = args.shift();
-    const fn = args.pop();
+  return function () {
+    if (arr.length === 1) {
+      return arr[0];
+    }
 
-    // if (obj[key]) {
-    //   return obj[key];
-    // }
+    const result = Promise.resolve()
+      .then(() => apiCallFn())
+      .finally(() => arr.pop());
 
-    obj[key] = new Promise((res, rej) => {
-      Promise.resolve(fn()).then(res).catch(rej);
-    });
+    arr.push(result);
 
-    return obj[key];
+    return result;
   };
 }
 (async () => {
-  const run = createIdempotentExecutor();
-  let calls = 0;
-
-  const fn = async () => {
-    calls++;
-    return calls;
+  let callCount = 0;
+  const api = async () => {
+    callCount++;
+    return `Result ${callCount}`;
   };
 
-  const r1 = await run("B", fn);
-  const r2 = await run("B", fn);
-  console.log(r2);
-  // expect(r1).toBe(1);
-  // expect(r2).toBe(2);
+  const sharedApi = createSharedRequest(api);
+  console.log(sharedApi);
+
+  const first = await sharedApi();
+  console.log(first);
+  // expect(first).toBe("Result 1");
+
+  const second = await sharedApi();
+  console.log(second);
+  // expect(second).toBe("Result 2");
+  // expect(callCount).toBe(2);
+  // expect(callCount).toBe(1);
 })();
