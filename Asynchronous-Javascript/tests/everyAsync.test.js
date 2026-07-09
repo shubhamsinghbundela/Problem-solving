@@ -1,6 +1,6 @@
 const everyAsync = require("../promises/medium/everyAsync");
 
-const sleep = ms => new Promise(res => setTimeout(res, ms));
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 describe("everyAsync", () => {
   test("resolves true when all predicates resolve true", async () => {
@@ -24,7 +24,7 @@ describe("everyAsync", () => {
     const result = await everyAsync([1, 2, 3, 4], predicate);
 
     expect(result).toBe(false);
-    expect(calls).toEqual([1, 2]); 
+    expect(calls).toEqual([1, 2]);
   });
 
   test("works with synchronous predicates", async () => {
@@ -49,8 +49,6 @@ describe("everyAsync", () => {
       return true;
     };
 
-    await expect(
-      everyAsync([1, 2, 3], predicate)
-    ).rejects.toThrow("boom");
+    await expect(everyAsync([1, 2, 3], predicate)).rejects.toThrow("boom");
   });
 });
