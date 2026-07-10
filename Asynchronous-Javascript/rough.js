@@ -1,38 +1,44 @@
-async function everyAsync(array, predicate) {
+async function mapAsyncLimit(array, limit, asyncFn) {
   return new Promise((resolve, reject) => {
-    let index = 0;
+    let result = [];
+    let completed = 0;
+    let active = 0;
+    index = 0;
     function next() {
-      if (index >= array.length) {
-        resolve(true);
+      if (completed == array.length) {
+        resolve(result);
         return;
       }
-
-      Promise.resolve(predicate(array[index]))
-        .then((data) => {
-          if (data == false) {
-            resolve(false);
-          }
-          index += 1;
+      while (active < limit && index < array.length) {
+        let currentIndex = index;
+        active += 1;
+        index += 1;
+        asyncFn(array[currentIndex]).then((data) => {
+          result[currentIndex] = data;
+          active -= 1;
+          completed++;
           next();
-        })
-        .catch(reject);
+        });
+      }
     }
     next();
   });
 }
+
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 (async () => {
-  const calls = [];
+  let running = 0;
+  let maxSeen = 0;
 
-  const predicate = async (n) => {
-    calls.push(n);
-    return n !== 2;
-  };
+  const input = [1, 2, 3, 4, 5];
 
-  const result = await everyAsync([1, 2, 3, 4], predicate);
+  await mapAsyncLimit(input, 2, async () => {
+    running++;
+    maxSeen = Math.max(maxSeen, running);
+    await sleep(20);
+    running--;
+  });
+  console.log(maxSeen);
 
-  console.log(calls);
-  console.log(calls);
-  // expect(result).toBe(false);
-  // expect(calls).toEqual([1, 2]);
+  // expect(maxSeen).toBeLessThanOrEqual(2);
 })();
