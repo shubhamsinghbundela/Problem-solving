@@ -13,7 +13,7 @@ class PriorityQueueExecutor {
     this.queue.push({ task, priority });
     console.log(priority);
     this.queue.sort((a, b) => b.priority - a.priority);
-    await this._run();
+    this._run();
   }
   async _run() {
     if (this.queue.length === 0) return;
