@@ -1,46 +1,48 @@
-function monitorPromise(promise, onHang, thresholdMs) {
-  return new Promise((resolve, reject) => {
-    let flag = true;
-    let timer = setTimeout(() => {
-      if (flag) {
-        flag = false;
-        onHang();
-        resolve("slow");
-      }
-    }, thresholdMs);
-
-    promise
-      .then((data) => {
-        if (flag) {
-          flag = false;
-          resolve(data);
-        }
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-  });
+class PriorityQueueExecutor {
+  constructor() {
+    this.queue = [];
+    this.active = 0;
+  }
+  async push(task, priority = 0) {
+    this.queue.push({ task, priority });
+    console.log(priority);
+    this.queue.sort((a, b) => b.priority - a.priority);
+    await this._run();
+  }
+  async _run() {
+    if (this.queue.length === 0) return;
+    while (this.active < 1) {
+      this.active += 1;
+      const { task } = this.queue.shift();
+      task()
+        .then(() => {
+          this.active -= 1;
+          this._run();
+        })
+        .catch((err) => {
+          this._run();
+        });
+    }
+  }
 }
-// const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
 (async () => {
-  let hung = false;
-  const onHang = () => {
-    hung = true;
+  const executor = new PriorityQueueExecutor();
+  const results = [];
+
+  const createTask = (id, ms) => async () => {
+    await new Promise((r) => setTimeout(r, ms));
+    results.push(id);
   };
 
-  const failingPromise = new Promise((_, reject) =>
-    setTimeout(() => reject("fail"), 20),
-  );
+  executor.push(createTask("LOW", 50), 1);
 
-  try {
-    await monitorPromise(failingPromise, onHang, 100);
-  } catch (e) {
-    console.log(e);
-    // expect(e).toBe("fail");
-  }
+  executor.push(createTask("MED", 10), 5);
+  executor.push(createTask("HIGH", 10), 10);
 
   await new Promise((r) => setTimeout(r, 150));
-  console.log(hung);
-  // expect(hung).toBe(false);
+
+  console.log(results);
+
+  // expect(results).toEqual(["LOW", "HIGH", "MED"]);
 })();
