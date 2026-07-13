@@ -1,38 +1,26 @@
-async function promiseAllSettled(promises) {
-  return new Promise((res, rej) => {
-    let results = [];
-    let completed = 0;
-
-    if (promises.length == 0) {
-      res([]);
-    }
-    promises.forEach((element, index) => {
-      Promise.resolve(element)
+async function raceWithMetadata(promiseMap) {
+  return new Promise((resolve, reject) => {
+    for (const key in promiseMap) {
+      promiseMap[key]
         .then((data) => {
-          results[index] = { status: "fulfilled", value: data };
-          completed++;
-          if (completed === promises.length) {
-            res(results);
-          }
+          resolve({ winner: key, value: data });
         })
         .catch((err) => {
-          results[index] = { status: "rejected", value: err };
-          completed++;
-          if (completed === promises.length) {
-            res(results);
-          }
+          reject(err);
         });
-    });
+    }
   });
 }
 
 (async () => {
-  const slowResolve = new Promise((res) => setTimeout(() => res("slow"), 30));
-  const fastReject = new Promise((_, rej) => setTimeout(() => rej("fail"), 10));
-
-  const result = await promiseAllSettled([slowResolve, fastReject]);
-  console.log(result);
-
-  // expect(result[0]).toEqual({ status: "fulfilled", value: "slow" });
-  // expect(result[1]).toEqual({ status: "rejected", reason: "fail" });
+  const promiseMap = {
+    fastFail: new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Fail")), 10),
+    ),
+    slowSuccess: new Promise((resolve) =>
+      setTimeout(() => resolve("Success"), 50),
+    ),
+  };
+  console.log(await raceWithMetadata(promiseMap));
+  // await expect(raceWithMetadata(promiseMap)).rejects.toThrow("Fail");
 })();

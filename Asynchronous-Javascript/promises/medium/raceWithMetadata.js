@@ -1,4 +1,3 @@
-
 // Problem Description – Race with Winner Information
 //
 // You are given an object where keys are labels and values are Promises.
@@ -8,6 +7,17 @@
 //
 // It must resolve with an object:
 // { winner: <key>, value: <resolved value> }
-async function raceWithMetadata(promiseMap) { }
-
+async function raceWithMetadata(promiseMap) {
+  return new Promise((resolve, reject) => {
+    for (const key in promiseMap) {
+      promiseMap[key]
+        .then((data) => {
+          resolve({ winner: key, value: data });
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    }
+  });
+}
 module.exports = raceWithMetadata;
