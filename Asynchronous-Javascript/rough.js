@@ -1,48 +1,38 @@
-class PriorityQueueExecutor {
-  constructor() {
-    this.queue = [];
-    this.active = 0;
-  }
-  async push(task, priority = 0) {
-    this.queue.push({ task, priority });
-    console.log(priority);
-    this.queue.sort((a, b) => b.priority - a.priority);
-    await this._run();
-  }
-  async _run() {
-    if (this.queue.length === 0) return;
-    while (this.active < 1) {
-      this.active += 1;
-      const { task } = this.queue.shift();
-      task()
-        .then(() => {
-          this.active -= 1;
-          this._run();
+async function promiseAllSettled(promises) {
+  return new Promise((res, rej) => {
+    let results = [];
+    let completed = 0;
+
+    if (promises.length == 0) {
+      res([]);
+    }
+    promises.forEach((element, index) => {
+      Promise.resolve(element)
+        .then((data) => {
+          results[index] = { status: "fulfilled", value: data };
+          completed++;
+          if (completed === promises.length) {
+            res(results);
+          }
         })
         .catch((err) => {
-          this._run();
+          results[index] = { status: "rejected", value: err };
+          completed++;
+          if (completed === promises.length) {
+            res(results);
+          }
         });
-    }
-  }
+    });
+  });
 }
 
 (async () => {
-  const executor = new PriorityQueueExecutor();
-  const results = [];
+  const slowResolve = new Promise((res) => setTimeout(() => res("slow"), 30));
+  const fastReject = new Promise((_, rej) => setTimeout(() => rej("fail"), 10));
 
-  const createTask = (id, ms) => async () => {
-    await new Promise((r) => setTimeout(r, ms));
-    results.push(id);
-  };
+  const result = await promiseAllSettled([slowResolve, fastReject]);
+  console.log(result);
 
-  executor.push(createTask("LOW", 50), 1);
-
-  executor.push(createTask("MED", 10), 5);
-  executor.push(createTask("HIGH", 10), 10);
-
-  await new Promise((r) => setTimeout(r, 150));
-
-  console.log(results);
-
-  // expect(results).toEqual(["LOW", "HIGH", "MED"]);
+  // expect(result[0]).toEqual({ status: "fulfilled", value: "slow" });
+  // expect(result[1]).toEqual({ status: "rejected", reason: "fail" });
 })();
