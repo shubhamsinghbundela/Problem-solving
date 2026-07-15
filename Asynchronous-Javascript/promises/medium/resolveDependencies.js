@@ -25,12 +25,10 @@ async function resolveDependencies(tasks) {
           .finally(() => {
             let lengthOfTasks = Object.keys(tasks).length;
             if (complete === lengthOfTasks - 1) {
-              console.log(output);
               resolve(output);
             }
           });
       } else {
-        console.log(current);
         let complete = 0;
         tasks[key].deps.forEach((element) => {
           if (current[element]) {
