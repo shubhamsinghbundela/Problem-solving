@@ -1,4 +1,3 @@
-}
 (async () => {
   let attempts = 0;
 
