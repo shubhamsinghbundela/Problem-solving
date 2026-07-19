@@ -12,7 +12,6 @@ function switchMap(apiCall) {
 
     const result = await apiCall(...args);
 
-    // Ignore result if a newer call has happened
     if (currentCallId !== latestCallId) {
       return undefined;
     }
