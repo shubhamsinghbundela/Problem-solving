@@ -1,17 +1,14 @@
-function switchMap(apiCall) {
-  let latestCallId = 0;
+async function swrCache(key, fetchFn) {
+  let cache = { key: key };
+  return new Promise((res, rej) => {
+    // Return old cache immediately
+    const oldValue = cache.key;
+    fetchFn().then((data) => {
+      cache.key = data;
+    });
 
-  return async function (...args) {
-    const currentCallId = ++latestCallId;
-
-    const result = await apiCall(...args);
-
-    if (currentCallId !== latestCallId) {
-      return undefined;
-    }
-
-    return result;
-  };
+    res(oldValue);
+  });
 }
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
